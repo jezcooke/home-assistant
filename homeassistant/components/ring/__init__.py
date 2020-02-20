@@ -3,18 +3,14 @@ import asyncio
 from datetime import timedelta
 from functools import partial
 import logging
-from pathlib import Path
 from typing import Optional
 
 from oauthlib.oauth2 import AccessDeniedError
 import requests
 from ring_doorbell import Auth, Ring
-import voluptuous as vol
 
-from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, __version__
+from homeassistant.const import __version__
 from homeassistant.core import HomeAssistant, callback
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util.async_ import run_callback_threadsafe
 
@@ -30,42 +26,9 @@ DEFAULT_ENTITY_NAMESPACE = "ring"
 
 PLATFORMS = ("binary_sensor", "light", "sensor", "switch", "camera")
 
-CONFIG_SCHEMA = vol.Schema(
-    {
-        vol.Optional(DOMAIN): vol.Schema(
-            {
-                vol.Required(CONF_USERNAME): cv.string,
-                vol.Required(CONF_PASSWORD): cv.string,
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
-
 
 async def async_setup(hass, config):
     """Set up the Ring component."""
-    if DOMAIN not in config:
-        return True
-
-    def legacy_cleanup():
-        """Clean up old tokens."""
-        old_cache = Path(hass.config.path(".ring_cache.pickle"))
-        if old_cache.is_file():
-            old_cache.unlink()
-
-    await hass.async_add_executor_job(legacy_cleanup)
-
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": config_entries.SOURCE_IMPORT},
-            data={
-                "username": config[DOMAIN]["username"],
-                "password": config[DOMAIN]["password"],
-            },
-        )
-    )
     return True
 
 
